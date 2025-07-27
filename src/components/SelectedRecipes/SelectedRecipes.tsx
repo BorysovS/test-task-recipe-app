@@ -184,8 +184,8 @@ const SelectedRecipes: React.FC<SelectedRecipesProps> = ({
         <h2 className="text-xl font-semibold">Your Shopping List</h2>
 
         <ul className="mt-4 list-disc space-y-1 pl-5">
-          {Object.entries(combinedIngredients).map(([key, item], index) => (
-            <li key={index} className="text-gray-700">
+          {Object.entries(combinedIngredients).map(([key, item]) => (
+            <li key={key} className="text-gray-700">
               <strong>{item.name}:</strong> {item.originalMeasures.join(' + ')}
             </li>
           ))}
