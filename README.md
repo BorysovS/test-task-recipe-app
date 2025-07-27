@@ -1,32 +1,63 @@
-Recipe App A simple web app for browsing recipes from TheMealDB API, built with
-React and TypeScript. Features
+# Recipe App
 
-Recipes List: Browse all recipes with search, category filtering, and pagination
-(3 items per page). Recipe Details: View detailed recipe information, including
-ingredients, instructions, and links. Selected Recipes: Display selected recipes
-with combined ingredients (summed for same units) and expandable instructions.
+A simple web app for browsing recipes from
+[TheMealDB API](https://www.themealdb.com/api.php), built with React and
+TypeScript.
 
-##Technologies
+## Features
 
-React TypeScript TanStack Query Axios Tailwind CSS Vite ESLint & Prettier
+- **Recipes List**: Browse all recipes with search, category filtering, and
+  pagination (3 items per page).
+- **Recipe Details**: View detailed recipe information, including ingredients,
+  instructions, and links.
+- **Selected Recipes**: Display selected recipes with combined ingredients
+  (summed for same units) and expandable instructions.
 
-##Installation
+## Technologies
 
-Clone the repository: git clone <repository-url> cd recipe-app
+- React
+- TypeScript
+- TanStack Query
+- Axios
+- Tailwind CSS
+- Vite
+- ESLint & Prettier
 
-##Install dependencies: npm install
+## Installation
 
-##Run the development server: npm run dev
+1. **Clone the repository:**
 
-##Scripts
+   ```bash
+   git clone https://github.com/your-username/recipe-app.git
+   cd recipe-app
+   ```
 
-npm run dev: Start the development server. npm run build: Build for production.
-npm run preview: Preview the production build. npm run lint: Run ESLint. npm run
-format: Run Prettier.
+2. **Install dependencies:**
 
-##Path Aliases
+   ```bash
+   npm install
+   ```
 
-@components/_: Maps to src/components/_ @services/_: Maps to src/services/_
-@types/_: Maps to src/types/_
+3. **Run the development server:**
 
-License MIT
+   ```bash
+   npm run dev
+   ```
+
+## Scripts
+
+- `npm run dev`: Start the development server.
+- `npm run build`: Build for production.
+- `npm run preview`: Preview the production build.
+- `npm run lint`: Run ESLint.
+- `npm run format`: Run Prettier.
+
+## Path Aliases
+
+- `@components/_`: Maps to `src/components/_`
+- `@services/_`: Maps to `src/services/_`
+- `@types/_`: Maps to `src/types/_`
+
+## License
+
+[MIT](LICENSE)
