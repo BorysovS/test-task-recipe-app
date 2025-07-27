@@ -1,46 +1,74 @@
 import React, { useState } from 'react';
 
-import type { Measure, SelectedRecipesProps } from './types';
 import type { Meal } from 'types';
+import type { CombinedIngredient, SelectedRecipesProps } from './types';
 
-const parseMeasure = (measure: string): Measure | null => {
-  if (!measure?.trim()) return null;
-  const match = measure.trim().match(/^(\d*\.?\d+\/?\d*)\s*(\w*)$/);
-  if (!match) return null;
+const normalizeUnit = (unit: string): string => {
+  const map: Record<string, string> = {
+    tblsp: 'tbsp',
+    tbs: 'tbsp',
+    tbsp: 'tbsp',
+    tablespoon: 'tbsp',
+    tsp: 'tsp',
+    teaspoons: 'tsp',
+    handfull: 'handful',
+    handful: 'handful',
+    clove: 'clove',
+    cloves: 'clove',
+    stick: 'stick',
+    sticks: 'stick',
+    l: 'ml',
+    litre: 'ml',
+    large: 'large',
+    medium: 'medium',
+    small: 'small',
+    unit: 'unit',
+    can: 'can',
+    finely: '',
+    chopped: '',
+    beaten: '',
+    garnish: '',
+    topping: '',
+    sprinkling: '',
+    to: '',
+    taste: '',
+  };
+  return map[unit.toLowerCase()] || unit.toLowerCase();
+};
 
-  const [, valueStr, unit] = match;
-  let value: number;
+const normalizeMeasure = (measure: string): string => {
+  if (!measure?.trim()) return 'unknown measure';
 
-  if (valueStr.includes('/')) {
-    const [numerator, denominator] = valueStr.split('/').map(Number);
-    value = denominator ? numerator / denominator : numerator;
-  } else {
-    value = Number(valueStr);
-  }
-
-  return { value, unit: unit || '' };
+  const parts = measure.trim().split(' ');
+  const unit = parts.length > 1 ? parts.pop() : '';
+  const value = parts.join(' ');
+  const normalizedUnit = normalizeUnit(unit || '');
+  return normalizedUnit
+    ? `${value} ${normalizedUnit}`.trim()
+    : value || 'unknown measure';
 };
 
 const combineMeasures = (
-  existing: string | undefined,
+  existing: CombinedIngredient | undefined,
   newMeasure: string,
   ingredient: string,
-): string => {
-  const parsedNew = parseMeasure(newMeasure);
-  if (!parsedNew) return existing || `${newMeasure.trim()} ${ingredient}`;
+): CombinedIngredient => {
+  const normalizedMeasure = normalizeMeasure(newMeasure);
 
-  if (!existing) return `${parsedNew.value} ${parsedNew.unit} ${ingredient}`;
-
-  const parsedExisting = parseMeasure(existing);
-  if (!parsedExisting || parsedExisting.unit !== parsedNew.unit) {
-    return `${existing}, ${newMeasure.trim()} ${ingredient}`;
+  if (!existing) {
+    return {
+      name: ingredient,
+      originalMeasures: [normalizedMeasure],
+    };
   }
 
-  const totalValue = parsedExisting.value + parsedNew.value;
-  return `${totalValue} ${parsedNew.unit} ${ingredient}`;
+  return {
+    ...existing,
+    originalMeasures: [...existing.originalMeasures, normalizedMeasure],
+  };
 };
 
-export const SelectedRecipes: React.FC<SelectedRecipesProps> = ({
+const SelectedRecipes: React.FC<SelectedRecipesProps> = ({
   selectedRecipes,
   onRemoveRecipe,
 }) => {
@@ -52,7 +80,7 @@ export const SelectedRecipes: React.FC<SelectedRecipesProps> = ({
     );
   };
 
-  const combinedIngredients = selectedRecipes.reduce(
+  const { combinedIngredients, totalIngredients } = selectedRecipes.reduce(
     (acc, recipe) => {
       Array.from({ length: 20 }, (_, i) => {
         const ingredient = recipe[
@@ -64,13 +92,42 @@ export const SelectedRecipes: React.FC<SelectedRecipesProps> = ({
         if (ingredient?.trim()) {
           const key = ingredient.toLowerCase();
 
-          acc[key] = combineMeasures(acc[key], measure, ingredient);
+          acc.combinedIngredients[key] = combineMeasures(
+            acc.combinedIngredients[key],
+            measure,
+            ingredient,
+          );
+
+          acc.totalIngredients.add(key);
         }
       });
       return acc;
     },
-    {} as Record<string, string>,
+    {
+      combinedIngredients: {} as Record<string, CombinedIngredient>,
+      totalIngredients: new Set<string>(),
+    },
   );
+
+  const downloadShoppingList = () => {
+    const content = Object.entries(combinedIngredients)
+      .map(([_, item]) => `${item.name}: ${item.originalMeasures.join(' + ')}`)
+      .join('\n');
+
+    const blob = new Blob(
+      [`Total unique ingredients: ${totalIngredients.size}\n\n${content}`],
+      { type: 'text/plain' },
+    );
+
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+
+    a.href = url;
+    a.download = 'shopping-list.txt';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   if (selectedRecipes.length === 0) {
     return (
@@ -105,11 +162,13 @@ export const SelectedRecipes: React.FC<SelectedRecipesProps> = ({
                 ? 'Hide Instructions'
                 : 'Show Instructions'}
             </button>
+
             {expandedRecipes.includes(recipe.idMeal) && (
               <p className="mt-2 whitespace-pre-wrap text-gray-700">
                 {recipe.strInstructions}
               </p>
             )}
+
             <button
               onClick={() => onRemoveRecipe(recipe)}
               className="mt-4 w-full rounded-lg bg-red-500 p-2 text-white transition hover:opacity-90"
@@ -122,13 +181,29 @@ export const SelectedRecipes: React.FC<SelectedRecipesProps> = ({
       </div>
 
       <div>
-        <h2 className="text-xl font-semibold">Combined Ingredients</h2>
-        <ul className="list-disc pl-5">
-          {Object.values(combinedIngredients).map((item, index) => (
-            <li key={index}>{item}</li>
+        <h2 className="text-xl font-semibold">Your Shopping List</h2>
+
+        <ul className="mt-4 list-disc space-y-1 pl-5">
+          {Object.entries(combinedIngredients).map(([key, item], index) => (
+            <li key={index} className="text-gray-700">
+              <strong>{item.name}:</strong> {item.originalMeasures.join(' + ')}
+            </li>
           ))}
         </ul>
+
+        <p className="text-gray-600">
+          Total unique ingredients: {totalIngredients.size}
+        </p>
+
+        <button
+          onClick={downloadShoppingList}
+          className="mt-4 rounded-lg bg-blue-500 p-2 text-white transition hover:opacity-90"
+        >
+          Download Shopping List
+        </button>
       </div>
     </div>
   );
 };
+
+export { SelectedRecipes };
