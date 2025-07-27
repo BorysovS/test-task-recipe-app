@@ -68,7 +68,7 @@ const combineMeasures = (
   };
 };
 
-const SelectedRecipes: React.FC<SelectedRecipesProps> = ({
+export const SelectedRecipes: React.FC<SelectedRecipesProps> = ({
   selectedRecipes,
   onRemoveRecipe,
 }) => {
@@ -205,5 +205,3 @@ const SelectedRecipes: React.FC<SelectedRecipesProps> = ({
     </div>
   );
 };
-
-export { SelectedRecipes };
